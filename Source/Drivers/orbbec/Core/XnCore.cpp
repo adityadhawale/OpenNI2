@@ -39,45 +39,45 @@ XnBool g_bXnCoreWasInit = FALSE;
 
 XnStatus XnGeneralBufferCopy(OniGeneralBuffer* pDest, const OniGeneralBuffer* pSrc)
 {
-	XN_VALIDATE_INPUT_PTR(pDest);
-	XN_VALIDATE_INPUT_PTR(pSrc);
+        XN_VALIDATE_INPUT_PTR(pDest);
+        XN_VALIDATE_INPUT_PTR(pSrc);
 
-	if (pSrc->dataSize > pDest->dataSize)
-		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
+        if (pSrc->dataSize > pDest->dataSize)
+                return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
 
-	xnOSMemCopy(pDest->data, pSrc->data, pSrc->dataSize);
-	pDest->dataSize = pSrc->dataSize;
-	return XN_STATUS_OK;
+        xnOSMemCopy(pDest->data, pSrc->data, pSrc->dataSize);
+        pDest->dataSize = pSrc->dataSize;
+        return XN_STATUS_OK;
 }
 
 XnStatus XnGeneralBufferAlloc(OniGeneralBuffer* pDest, XnUInt32 nSize)
 {
-	XN_VALIDATE_INPUT_PTR(pDest);
+        XN_VALIDATE_INPUT_PTR(pDest);
 
-	void* pData;
-	pData = xnOSMalloc(nSize);
-	XN_VALIDATE_ALLOC_PTR(pData);
+        void* pData;
+        pData = xnOSMalloc(nSize);
+        XN_VALIDATE_ALLOC_PTR(pData);
 
-	pDest->data = pData;
-	pDest->dataSize = nSize;
-	return XN_STATUS_OK;
+        pDest->data = pData;
+        pDest->dataSize = nSize;
+        return XN_STATUS_OK;
 }
 
 XnStatus XnGeneralBufferRealloc(OniGeneralBuffer* pDest, XnUInt32 nSize)
 {
-	XN_VALIDATE_INPUT_PTR(pDest);
+        XN_VALIDATE_INPUT_PTR(pDest);
 
-	void* pData;
-	pData = xnOSRealloc(pDest, nSize);
-	XN_VALIDATE_ALLOC_PTR(pData);
+        void* pData;
+        pData = xnOSRealloc(pDest, nSize);
+        XN_VALIDATE_ALLOC_PTR(pData);
 
-	pDest->data = pData;
-	pDest->dataSize = nSize;
-	return XN_STATUS_OK;
+        pDest->data = pData;
+        pDest->dataSize = nSize;
+        return XN_STATUS_OK;
 }
 
 void XnGeneralBufferFree(OniGeneralBuffer* pDest)
 {
-	XN_FREE_AND_NULL(pDest->data);
-	pDest->dataSize = 0;
+        XN_FREE_AND_NULL(pDest->data);
+        pDest->dataSize = 0;
 }

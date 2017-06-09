@@ -736,19 +736,6 @@ void Context::frameAddRef(OniFrame* pFrame)
 
 OniStatus Context::waitForStreams(OniStreamHandle* pStreams, int streamCount, int* pStreamIndex, int timeout)
 {
-	if (m_autoRecording && !m_autoRecordingStarted)
-	{
-		m_streamsToAutoRecord.Lock();
-		for (xnl::List<OniStreamHandle>::ConstIterator iter = m_streamsToAutoRecord.Begin(); iter != m_streamsToAutoRecord.End(); ++iter)
-		{
-			m_autoRecorder->pRecorder->attachStream(*(*iter)->pStream, true);
-		}
-		m_streamsToAutoRecord.Unlock();
-
-		m_autoRecorder->pRecorder->start();
-		m_autoRecordingStarted = true;
-	}
-
 	static const int MAX_WAITED_STREAMS = 50;
 	Device* deviceList[MAX_WAITED_STREAMS];
 	VideoStream* streamsList[MAX_WAITED_STREAMS];
@@ -1032,9 +1019,7 @@ OniStatus Context::recorderOpen(const char* fileName, OniRecorderHandle* pRecord
         return ONI_STATUS_ERROR;
     }
     // Create the recorder itself.
-	(*pRecorder)->pRecorder = XN_NEW(FileRecorder, m_frameManager, m_errorLogger, *pRecorder);
-
-    if (NULL == (*pRecorder)->pRecorder)
+    if (NULL == ((*pRecorder)->pRecorder = XN_NEW(Recorder, m_frameManager, m_errorLogger, *pRecorder)))
     {
         XN_DELETE(*pRecorder);
         return ONI_STATUS_ERROR;
@@ -1127,10 +1112,6 @@ void Context::addToLogger(const XnChar* cpFormat, ...)
 
 void Context::onNewFrame()
 {
-	XnUInt64 nNow;
-	xnOSGetHighResTimeStamp(&nNow);
-	nNow /= 1000000;
-
 	m_cs.Lock();
 	for (xnl::Hash<XN_THREAD_ID, XN_EVENT_HANDLE>::Iterator it = m_waitingThreads.Begin(); it != m_waitingThreads.End(); ++it)
 	{

@@ -57,9 +57,6 @@ VideoStream::VideoStream(Sensor* pSensor, const OniSensorInfo* pSensorInfo, Devi
     m_driverHandler.streamSetPropertyChangedCallback(m_pSensor->streamHandle(), stream_PropertyChanged, this);
 
 	refreshWorldConversionCache();
-
-	xnFPSInit(&m_FPS, 180);
-	xnOSStrCopy(m_sensorName, getSensorName(pSensorInfo->sensorType), sizeof(m_sensorName));
 }
 
 // Stream
@@ -68,16 +65,9 @@ VideoStream::~VideoStream()
 	// Make sure stream is stopped.
 	stop();
 
-	xnFPSFree(&m_FPS);
-
 	if (m_hNewFrameEvent != NULL)
 	{
-		//If device has no handle then the m_pSensor object is not valid
-		if(m_device.getHandle() != NULL)
-		{
-			m_pSensor->newFrameEvent().Unregister(m_hNewFrameEvent);
-		}
-
+		m_pSensor->newFrameEvent().Unregister(m_hNewFrameEvent);
 		m_hNewFrameEvent = NULL;
 	}
 
@@ -351,7 +341,6 @@ void ONI_CALLBACK_TYPE VideoStream::stream_NewFrame(OniFrame* pFrame, void* pCoo
 
 void VideoStream::raiseNewFrameEvent()
 {
-	xnFPSMarkFrame(&m_FPS);
 	xnOSSetEvent(m_newFrameInternalEvent);
 	xnOSSetEvent(m_newFrameInternalEventForFrameHolder);
 	m_newFrameCallback(m_newFrameCookie);
@@ -407,13 +396,11 @@ OniStatus VideoStream::convertDepthToWorldCoordinates(float depthX, float depthY
 		return ONI_STATUS_NOT_SUPPORTED;
 	}
 
-	float depthZmm = depthZ * m_worldConvertCache.zFactor;
-
 	float normalizedX = depthX / m_worldConvertCache.resolutionX - .5f;
 	float normalizedY = .5f - depthY / m_worldConvertCache.resolutionY;
 
-	*pWorldX = normalizedX * depthZmm * m_worldConvertCache.xzFactor;
-	*pWorldY = normalizedY * depthZmm * m_worldConvertCache.yzFactor;
+	*pWorldX = normalizedX * depthZ * m_worldConvertCache.xzFactor;
+	*pWorldY = normalizedY * depthZ * m_worldConvertCache.yzFactor;
 	*pWorldZ = depthZ;
 	return ONI_STATUS_OK;
 }
@@ -426,10 +413,8 @@ OniStatus VideoStream::convertWorldToDepthCoordinates(float worldX, float worldY
 		return ONI_STATUS_NOT_SUPPORTED;
 	}
 
-	float worldZmm = worldZ * m_worldConvertCache.zFactor;
-
-	*pDepthX = m_worldConvertCache.coeffX * worldX / worldZmm + m_worldConvertCache.halfResX;
-	*pDepthY = m_worldConvertCache.halfResY - m_worldConvertCache.coeffY * worldY / worldZmm;
+	*pDepthX = m_worldConvertCache.coeffX * worldX / worldZ + m_worldConvertCache.halfResX;
+	*pDepthY = m_worldConvertCache.halfResY - m_worldConvertCache.coeffY * worldY / worldZ;
 	*pDepthZ = worldZ;
 	return ONI_STATUS_OK;
 }
@@ -446,8 +431,8 @@ void VideoStream::refreshWorldConversionCache()
 	getProperty(ONI_STREAM_PROPERTY_VIDEO_MODE, &videoMode, &size);
 
 	size = sizeof(float);
-	float horizontalFov = 0.0;
-	float verticalFov = 0.0;
+	float horizontalFov;
+	float verticalFov;
 	getProperty(ONI_STREAM_PROPERTY_HORIZONTAL_FOV, &horizontalFov, &size);
 	getProperty(ONI_STREAM_PROPERTY_VERTICAL_FOV, &verticalFov, &size);
 
@@ -459,18 +444,6 @@ void VideoStream::refreshWorldConversionCache()
 	m_worldConvertCache.halfResY = m_worldConvertCache.resolutionY / 2;
 	m_worldConvertCache.coeffX = m_worldConvertCache.resolutionX / m_worldConvertCache.xzFactor;
 	m_worldConvertCache.coeffY = m_worldConvertCache.resolutionY / m_worldConvertCache.yzFactor;
-
-	switch (videoMode.pixelFormat)
-	{
-	case ONI_PIXEL_FORMAT_DEPTH_1_MM:
-		m_worldConvertCache.zFactor = 1.f;
-		break;
-	case ONI_PIXEL_FORMAT_DEPTH_100_UM:
-		m_worldConvertCache.zFactor = 0.1f;
-		break;
-	default:
-		XN_ASSERT(FALSE);
-	}
 }
 
 OniStatus VideoStream::convertDepthToColorCoordinates(VideoStream* colorStream, int depthX, int depthY, OniDepthPixel depthZ, int* pColorX, int* pColorY)
@@ -492,27 +465,6 @@ OniStatus VideoStream::convertDepthToColorCoordinates(VideoStream* colorStream, 
 int VideoStream::getRequiredFrameSize()
 {
 	return m_driverHandler.streamGetRequiredFrameSize(m_pSensor->streamHandle());
-}
-
-double VideoStream::calcCurrentFPS()
-{
-	return xnFPSCalc(&m_FPS);
-}
-
-const XnChar* VideoStream::getSensorName(OniSensorType sensorType)
-{
-	switch (sensorType)
-	{
-	case ONI_SENSOR_DEPTH:
-		return "Depth";
-	case ONI_SENSOR_COLOR:
-		return "Color";
-	case ONI_SENSOR_IR:
-		return "IR";
-	default:
-		XN_ASSERT(FALSE);
-		return "(Unknown)";
-	}
 }
 
 ONI_NAMESPACE_IMPLEMENTATION_END

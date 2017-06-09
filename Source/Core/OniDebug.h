@@ -18,8 +18,8 @@
 *  limitations under the License.                                            *
 *                                                                            *
 *****************************************************************************/
-#ifndef ONIDEBUG_H
-#define ONIDEBUG_H
+#ifndef _ONI_DEBUG_H_
+#define _ONI_DEBUG_H_
 
 namespace oni
 {
@@ -167,4 +167,4 @@ private:
 
 
 
-#endif // ONIDEBUG_H
+#endif

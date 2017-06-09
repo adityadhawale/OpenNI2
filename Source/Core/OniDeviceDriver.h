@@ -18,8 +18,8 @@
 *  limitations under the License.                                            *
 *                                                                            *
 *****************************************************************************/
-#ifndef ONIDEVICEDRIVER_H
-#define ONIDEVICEDRIVER_H
+#ifndef _ONI_IMPL_DEVICE_DRIVER_H_
+#define _ONI_IMPL_DEVICE_DRIVER_H_
 
 #include "OniDriverHandler.h"
 #include "OniFrameManager.h"
@@ -83,4 +83,4 @@ private:
 
 ONI_NAMESPACE_IMPLEMENTATION_END
 
-#endif // ONIDEVICEDRIVER_H
+#endif // _ONI_IMPL_DEVICE_DRIVER_H_

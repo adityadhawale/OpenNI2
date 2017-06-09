@@ -18,8 +18,8 @@
 *  limitations under the License.                                            *
 *                                                                            *
 *****************************************************************************/
-#ifndef ONIINTERNAL_H
-#define ONIINTERNAL_H
+#ifndef _ONI_INTERNAL_H_
+#define _ONI_INTERNAL_H_
 
 #include "OniPlatform.h"
 
@@ -37,4 +37,4 @@ ONI_C_API void oniWriteLogEntry(const char* mask, int severity, const char* mess
 // #if ONI_PLATFORM == ONI_PLATFORM_ANDROID_ARM
 // ONI_C_API OniStatus oniSetLogAndroidOutput(OniBool bAndroidOutput);
 //#endif
-#endif // ONIINTERNAL_H
+#endif //_ONI_INTERNAL_H_

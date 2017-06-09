@@ -19,7 +19,6 @@
 *                                                                            *
 *****************************************************************************/
 #include "OniContext.h"
-#include "OniFileRecorder.h"
 #include "OniStreamFrameHolder.h"
 #include <XnLog.h>
 #include <XnOSCpp.h>

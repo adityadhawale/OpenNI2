@@ -1137,31 +1137,6 @@ void Context::onNewFrame()
 	{
 		xnOSSetEvent(it->Value());
 	}
-
-	if (nNow != m_lastFPSPrint)
-	{
-		XnChar fpsInfo[2048] = "";
-		XnUInt32 written = 0;
-		XnUInt32 writtenNow = 0;
-		xnOSStrFormat(fpsInfo + written, sizeof(fpsInfo) - written, &writtenNow, "[FPS] ");
-		written += writtenNow;
-
-		for (xnl::List<VideoStream*>::Iterator it = m_streams.Begin(); it != m_streams.End(); ++it)
-		{
-			VideoStream* pStream = *it;
-			if (written > sizeof(fpsInfo))
-			{
-				break;
-			}
-
-			xnOSStrFormat(fpsInfo + written, sizeof(fpsInfo) - written, &writtenNow, "%s: %.2f ", 
-				pStream->getSensorName(), pStream->calcCurrentFPS());
-			written += writtenNow;
-		}
-
-		xnLogVerbose(XN_MASK_ONI_CONTEXT, "%s", fpsInfo);
-		m_lastFPSPrint = nNow;
-	}
 	m_cs.Unlock();
 }
 

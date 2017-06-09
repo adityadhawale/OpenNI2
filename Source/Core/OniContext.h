@@ -18,9 +18,6 @@
 *  limitations under the License.                                            *
 *                                                                            *
 *****************************************************************************/
-#ifndef ONICONTEXT_H
-#define ONICONTEXT_H
-
 #include "OniStream.h"
 #include "OniDevice.h"
 #include "OniSyncedStreamsFrameHolder.h"
@@ -28,13 +25,11 @@
 #include "OniRecorder.h"
 #include "OniFrameManager.h"
 
+#include "XnList.h"
+#include "XnHash.h"
+#include "XnEvent.h"
 #include "OniDriverHandler.h"
 #include "OniCommon.h"
-
-#include <XnList.h>
-#include <XnSimpleString.h>
-#include <XnHash.h>
-#include <XnEvent.h>
 
 struct _OniDevice
 {
@@ -117,10 +112,7 @@ private:
 	Context(const Context& other);
 	Context& operator=(const Context&other);
 
-	XnStatus resolvePathToOpenNI();
-	XnStatus configure();
-	XnStatus resolveConfigurationFile(char* strConfigurationFile);
-	XnStatus loadLibraries();
+	XnStatus loadLibraries(const char* directoryName);
 	void onNewFrame();
 	XN_EVENT_HANDLE getThreadEvent();
 	static void XN_CALLBACK_TYPE newFrameCallback(void* pCookie);
@@ -138,24 +130,13 @@ private:
 	xnl::List<oni::implementation::VideoStream*> m_streams;
     xnl::List<oni::implementation::Recorder*> m_recorders;
 
-	xnl::Lockable<xnl::List<OniStreamHandle> > m_streamsToAutoRecord;
-	XnBool m_autoRecording;
-	XnBool m_autoRecordingStarted;
-	OniRecorderHandle m_autoRecorder;
-
 	xnl::Hash<XN_THREAD_ID, XN_EVENT_HANDLE> m_waitingThreads;
 
 	xnl::CriticalSection m_cs;
 
-	char m_pathToOpenNI[XN_FILE_MAX_PATH];
 	char m_overrideDevice[XN_FILE_MAX_PATH];
-	char m_driverRepo[XN_FILE_MAX_PATH];
-	xnl::Array<xnl::FileName> m_driversList;
 
 	int m_initializationCounter;
-	XnUInt64 m_lastFPSPrint;
 };
 
 ONI_NAMESPACE_IMPLEMENTATION_END
-
-#endif // ONICONTEXT_H

@@ -32,10 +32,9 @@ ONI_NAMESPACE_IMPLEMENTATION_BEGIN
 
 OniBool Context::s_valid = FALSE;
 
-Context::Context() : m_errorLogger(xnl::ErrorLogger::GetInstance()), m_autoRecording(false), m_autoRecordingStarted(false), m_initializationCounter(0), m_lastFPSPrint(0)
+Context::Context() : m_errorLogger(xnl::ErrorLogger::GetInstance()), m_initializationCounter(0)
 {
-	m_overrideDevice[0] = '\0';
-	m_driverRepo[0] = '\0';
+	xnOSMemSet(m_overrideDevice, 0, XN_FILE_MAX_PATH);
 }
 
 Context::~Context()
@@ -43,8 +42,14 @@ Context::~Context()
 	s_valid = FALSE;
 }
 
+// Dummy function used only for taking its address for the sake of xnOSGetModulePathForProcAddress.
+static void dummyFunctionToTakeAddress() {}
+
 OniStatus Context::initialize()
 {
+	XnBool repositoryOverridden = FALSE;
+	XnChar repositoryFromINI[XN_FILE_MAX_PATH] = {0};
+
 	m_initializationCounter++;
 	if (m_initializationCounter > 1)
 	{
@@ -52,100 +57,38 @@ OniStatus Context::initialize()
 		return ONI_STATUS_OK;
 	}
 
-	XnStatus rc = resolvePathToOpenNI();
-	if (rc != XN_STATUS_OK)
-	{
-		return OniStatusFromXnStatus(rc);
-	}
-	
-	rc = configure();
-	if (rc != XN_STATUS_OK)
-	{
-		return OniStatusFromXnStatus(rc);
-	}
-
-	s_valid = TRUE;
-
-	rc = loadLibraries();
-	if (rc == XN_STATUS_OK)
-	{
-		m_errorLogger.Clear();
-	}
-
-	return OniStatusFromXnStatus(rc);
-}
-
-// Dummy function used only for taking its address for the sake of xnOSGetModulePathForProcAddress.
-static void dummyFunctionToTakeAddress() {}
-
-XnStatus Context::resolvePathToOpenNI()
-{
-	XnStatus rc = XN_STATUS_OK;
+	XnStatus rc;
 
 	XnChar strModulePath[XN_FILE_MAX_PATH];
 	rc = xnOSGetModulePathForProcAddress(reinterpret_cast<void*>(&dummyFunctionToTakeAddress), strModulePath);
 	if (rc != XN_STATUS_OK)
 	{
 		m_errorLogger.Append("Couldn't get the OpenNI shared library module's path: %s", xnGetStatusString(rc));
-		return rc;
+		return OniStatusFromXnStatus(rc);
 	}
 
-	rc = xnOSGetDirName(strModulePath, m_pathToOpenNI, sizeof(m_pathToOpenNI));
+	XnChar strBaseDir[XN_FILE_MAX_PATH];
+	rc = xnOSGetDirName(strModulePath, strBaseDir, XN_FILE_MAX_PATH);
 	if (rc != XN_STATUS_OK)
 	{
 		// Very unlikely to happen, but just in case.
 		m_errorLogger.Append("Couldn't get the OpenNI shared library module's directory: %s", xnGetStatusString(rc));
-		return rc;
-	}
-
-	return XN_STATUS_OK;
-}
-
-XnStatus Context::resolveConfigurationFile(char* strOniConfigurationFile)
-{
-	XnStatus rc = XN_STATUS_OK;
-	XnBool bExists;
-
-#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
-	// support for applications
-	xnOSGetApplicationFilesDir(strOniConfigurationFile, XN_FILE_MAX_PATH);
-	rc = xnOSAppendFilePath(strOniConfigurationFile, ONI_CONFIGURATION_FILE, XN_FILE_MAX_PATH);
-	XN_IS_STATUS_OK(rc);
-
-	xnOSDoesFileExist(strOniConfigurationFile, &bExists);
-
-	if (!bExists)
-	{
-		// support for native use - search in current dir
-		rc = xnOSStrCopy(strOniConfigurationFile, ONI_CONFIGURATION_FILE, XN_FILE_MAX_PATH);
-		XN_IS_STATUS_OK(rc);
-	}
-
-#else
-	xnOSStrCopy(strOniConfigurationFile, m_pathToOpenNI, XN_FILE_MAX_PATH);
-	rc = xnOSAppendFilePath(strOniConfigurationFile, ONI_CONFIGURATION_FILE, XN_FILE_MAX_PATH);
-	XN_IS_STATUS_OK(rc);
-#endif
-
-	xnOSDoesFileExist(strOniConfigurationFile, &bExists);
-
-	if (!bExists)
-	{
-		strOniConfigurationFile[0] = '\0';
-	}
-
-	return XN_STATUS_OK;
-}
-
-XnStatus Context::configure()
-{
-	XnStatus nRetVal = XN_STATUS_OK;
-	
-	XnChar strOniConfigurationFile[XN_FILE_MAX_PATH];
-	XnStatus rc = resolveConfigurationFile(strOniConfigurationFile);
-	if (rc != XN_STATUS_OK)
-	{
 		return OniStatusFromXnStatus(rc);
+	}
+
+	s_valid = TRUE;
+
+	// Read configuration file
+
+	XnChar strOniConfigurationFile[XN_FILE_MAX_PATH];
+	XnBool configurationFileExists = FALSE;
+
+	// Search the module directory for OpenNI.ini.
+	xnOSStrCopy(strOniConfigurationFile, strBaseDir, XN_FILE_MAX_PATH);
+	rc = xnOSAppendFilePath(strOniConfigurationFile, ONI_CONFIGURATION_FILE, XN_FILE_MAX_PATH);
+	if (rc == XN_STATUS_OK)
+	{
+		xnOSDoesFileExist(strOniConfigurationFile, &configurationFileExists);
 	}
 
 #ifdef ONI_PLATFORM_ANDROID_OS
@@ -153,164 +96,155 @@ XnStatus Context::configure()
 	xnLogSetAndroidOutput(TRUE);
 #endif
 	
-	// First, we should process the log related configuration as early as possible.
-	rc = xnLogInitFromINIFile(strOniConfigurationFile, "Log");
-	if (XN_STATUS_OK != rc)
+	if (configurationFileExists)
 	{
-		return ONI_STATUS_ERROR;
-	}
+		// First, we should process the log related configuration as early as possible.
 
-	// Now that log was configured, we can start issues some log entries
-	xnLogVerbose(XN_MASK_ONI_CONTEXT, "OpenNI %s", ONI_VERSION_STRING);
-	if (strOniConfigurationFile[0] != '\0')
-	{
-		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Configuration file found at '%s'", strOniConfigurationFile);
-	}
+		XnInt32 nValue;
+		XnChar strLogPath[XN_FILE_MAX_PATH] = {0};
 
-	// Then, process the other device configurations.
-	rc = xnOSReadStringFromINI(strOniConfigurationFile, "Device", "Override", m_overrideDevice, sizeof(m_overrideDevice));
-	if (rc == XN_STATUS_OK)
-	{
-		xnLogWarning(XN_MASK_ONI_CONTEXT, "Device will be overridden with '%s'", m_overrideDevice);
-	}
-
-	XnChar autoRecordingName[XN_FILE_MAX_PATH];
-	rc = xnOSReadStringFromINI(strOniConfigurationFile, "Device", "RecordTo", autoRecordingName, XN_FILE_MAX_PATH);
-	if (rc == XN_STATUS_OK)
-	{
-		OniStatus oniRc = recorderOpen(autoRecordingName, &m_autoRecorder);
-		if (oniRc == ONI_STATUS_OK)
+		//Test if log redirection is needed 
+		rc = xnOSReadStringFromINI(strOniConfigurationFile, "Log", "LogPath", strLogPath, XN_FILE_MAX_PATH);
+		if (rc == XN_STATUS_OK)
 		{
-			m_autoRecording = true;
-		}
-	}
-
-	XnChar strRepo[XN_FILE_MAX_PATH];
-	strRepo[0] = '\0';
-
-#if XN_PLATFORM != XN_PLATFORM_ANDROID_ARM
-	xnOSStrCopy(strRepo, ONI_DEFAULT_DRIVERS_REPOSITORY, sizeof(strRepo));
-#endif
-
-	// check if repo was overridden
-	XnChar strTemp[XN_INI_MAX_LEN];
-	rc = xnOSReadStringFromINI(strOniConfigurationFile, "Drivers", "Repository", strTemp, sizeof(strTemp));
-	if (rc == XN_STATUS_OK)
-	{
-		xnOSStrCopy(strRepo, strTemp, sizeof(strRepo));
-	}
-
-	rc = xnOSStrCopy(m_driverRepo, m_pathToOpenNI, sizeof(m_driverRepo));
-	XN_IS_STATUS_OK(nRetVal);
-	rc = xnOSAppendFilePath(m_driverRepo, strRepo, sizeof(m_driverRepo));
-	if (rc != XN_STATUS_OK)
-	{
-		xnLogError(XN_MASK_ONI_CONTEXT, "Driver path is too long!");
-		m_errorLogger.Append("The driver path gets too long");
-		return rc;
-	}
-
-#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
-	m_driversList.AddLast("libOniFile.so");
-	m_driversList.AddLast("libPS1080.so");
-	m_driversList.AddLast("liborbbec.so");
-	m_driversList.AddLast("libPSLink.so");
-	m_driversList.AddLast("libSD.so");
-#endif
-
-	// check if driver list is overridden
-	XnChar strDriversList[2048];
-	rc = xnOSReadStringFromINI(strOniConfigurationFile, "Drivers", "List", strDriversList, sizeof(strDriversList));
-	if (rc == XN_STATUS_OK)
-	{
-		m_driversList.Clear();
-
-		// parse list
-		xnl::FileName driver;
-		int driverLen = 0;
-
-		for (XnChar* c = strDriversList; ; ++c)
-		{
-			if (*c == ',' || *c == '\0')
+			rc = xnLogSetOutputFolder(strLogPath);
+			if (rc != XN_STATUS_OK)
 			{
-				driver[driverLen++] = '\0';
-				rc = m_driversList.AddLast(driver);
-				XN_IS_STATUS_OK(rc);
-				driverLen = 0;
-
-				if (*c == '\0')
-					break;
+				xnLogWarning(XN_MASK_ONI_CONTEXT, "Failed to set log output folder: %s", xnGetStatusString(rc));
 			}
 			else
 			{
-				driver[driverLen++] = *c;
+				xnLogVerbose(XN_MASK_ONI_CONTEXT, "Log directory redirected to: %s", strLogPath);
 			}
 		}
+
+		rc = xnOSReadIntFromINI(strOniConfigurationFile, "Log", "Verbosity", &nValue);
+		if (rc == XN_STATUS_OK)
+		{
+			xnLogSetMaskMinSeverity(XN_LOG_MASK_ALL, (XnLogSeverity)nValue);
+		}
+
+		rc = xnOSReadIntFromINI(strOniConfigurationFile, "Log", "LogToConsole", &nValue);
+		if (rc == XN_STATUS_OK)
+		{
+			xnLogSetConsoleOutput(nValue == 1);
+		}
+		
+		rc = xnOSReadIntFromINI(strOniConfigurationFile, "Log", "LogToFile", &nValue);
+		if (rc == XN_STATUS_OK)
+		{
+			xnLogSetFileOutput(nValue == 1);
+		}
+
+		// Then, process the other device configurations.
+
+		rc = xnOSReadStringFromINI(strOniConfigurationFile, "Device", "Override", m_overrideDevice, XN_FILE_MAX_PATH);
+		if (rc != XN_STATUS_OK)
+		{
+			xnLogVerbose(XN_MASK_ONI_CONTEXT, "No override device in configuration file");
+		}
+
+		rc = xnOSReadStringFromINI(strOniConfigurationFile, "Drivers", "Repository", repositoryFromINI, XN_FILE_MAX_PATH);
+		if (rc == XN_STATUS_OK)
+		{
+			repositoryOverridden = TRUE;
+		}
+
+
+
+		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Configuration has been read from '%s'", strOniConfigurationFile);
+	}
+	else
+	{
+		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Couldn't find configuration file '%s'", strOniConfigurationFile);
 	}
 
-	return (XN_STATUS_OK);
-}
+	xnLogVerbose(XN_MASK_ONI_CONTEXT, "OpenNI %s", ONI_VERSION_STRING);
 
-XnStatus Context::loadLibraries()
+	// Resolve the drive path based on the module's directory.
+	XnChar strDriverPath[XN_FILE_MAX_PATH];
+	xnOSStrCopy(strDriverPath, strBaseDir, XN_FILE_MAX_PATH);
+
+	if (repositoryOverridden)
+	{
+		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Extending the driver path by '%s', as configured in file '%s'", repositoryFromINI, strOniConfigurationFile);
+		rc = xnOSAppendFilePath(strDriverPath, repositoryFromINI, XN_FILE_MAX_PATH);
+	}
+	else
+	{
+		rc = xnOSAppendFilePath(strDriverPath, ONI_DEFAULT_DRIVERS_REPOSITORY, XN_FILE_MAX_PATH);
+	}
+
+	if (rc != XN_STATUS_OK)
+	{
+		m_errorLogger.Append("The driver path gets too long");
+		return OniStatusFromXnStatus(rc);
+	}
+
+	xnLogVerbose(XN_MASK_ONI_CONTEXT, "Using '%s' as driver path", strDriverPath);
+	rc = loadLibraries(strDriverPath);
+
+	if (rc == XN_STATUS_OK)
+	{
+		m_errorLogger.Clear();
+	}
+
+	return OniStatusFromXnStatus(rc);
+}
+XnStatus Context::loadLibraries(const char* directoryName)
 {
 	XnStatus nRetVal;
 
-	xnLogVerbose(XN_MASK_ONI_CONTEXT, "Using '%s' as driver path", m_driverRepo);
+	// Get a file list of Xiron devices
 
-	if (m_driversList.IsEmpty())
+	XnInt32 nFileCount = 0;
+	typedef XnChar FileName[XN_FILE_MAX_PATH];
+	FileName* acsFileList = NULL;
+
+#if (ONI_PLATFORM != ONI_PLATFORM_ANDROID_ARM)
+	XnChar cpSearchString[XN_FILE_MAX_PATH] = "";
+
+	xnLogVerbose(XN_MASK_ONI_CONTEXT, "Looking for drivers in drivers repository '%s'", directoryName);
+
+	// Build the search pattern string
+	XN_VALIDATE_STR_APPEND(cpSearchString, directoryName, XN_FILE_MAX_PATH, nRetVal);
+	XN_VALIDATE_STR_APPEND(cpSearchString, XN_FILE_DIR_SEP, XN_FILE_MAX_PATH, nRetVal);
+	XN_VALIDATE_STR_APPEND(cpSearchString, XN_SHARED_LIBRARY_PREFIX, XN_FILE_MAX_PATH, nRetVal);
+	XN_VALIDATE_STR_APPEND(cpSearchString, XN_FILE_ALL_WILDCARD, XN_FILE_MAX_PATH, nRetVal);
+	XN_VALIDATE_STR_APPEND(cpSearchString, XN_SHARED_LIBRARY_POSTFIX, XN_FILE_MAX_PATH, nRetVal);
+
+	nRetVal = xnOSCountFiles(cpSearchString, &nFileCount);
+	if (nRetVal != XN_STATUS_OK || nFileCount == 0)
 	{
-		// search repo for drivers
-		XnInt32 nFileCount = 0;
-		XnChar cpSearchString[XN_FILE_MAX_PATH] = "";
-
-		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Looking for drivers at '%s'", m_driverRepo);
-
-		// Build the search pattern string
-		XN_VALIDATE_STR_APPEND(cpSearchString, m_driverRepo, XN_FILE_MAX_PATH, nRetVal);
-		XN_VALIDATE_STR_APPEND(cpSearchString, XN_FILE_DIR_SEP, XN_FILE_MAX_PATH, nRetVal);
-		XN_VALIDATE_STR_APPEND(cpSearchString, XN_SHARED_LIBRARY_PREFIX, XN_FILE_MAX_PATH, nRetVal);
-		XN_VALIDATE_STR_APPEND(cpSearchString, XN_FILE_ALL_WILDCARD, XN_FILE_MAX_PATH, nRetVal);
-		XN_VALIDATE_STR_APPEND(cpSearchString, XN_SHARED_LIBRARY_POSTFIX, XN_FILE_MAX_PATH, nRetVal);
-
-		nRetVal = xnOSCountFiles(cpSearchString, &nFileCount);
-		if (nRetVal != XN_STATUS_OK || nFileCount == 0)
-		{
-			xnLogError(XN_MASK_ONI_CONTEXT, "Found no drivers matching '%s'", cpSearchString);
-			m_errorLogger.Append("Found no files matching '%s'", cpSearchString);
-			return XN_STATUS_NO_MODULES_FOUND;
-		}
-
-		nRetVal = m_driversList.SetSize(nFileCount);
-		XN_IS_STATUS_OK(nRetVal);
-
-		typedef XnChar MyFileName[XN_FILE_MAX_PATH];
-		MyFileName* acsFileList = XN_NEW_ARR(MyFileName, nFileCount);
-
-		nRetVal = xnOSGetFileList(cpSearchString, NULL, acsFileList, nFileCount, &nFileCount);
-		XN_IS_STATUS_OK(nRetVal);
-
-		for (int i = 0; i < nFileCount; ++i)
-		{
-			m_driversList[i] = acsFileList[i];
-		}
-
-		XN_DELETE_ARR(acsFileList);
+		xnLogError(XN_MASK_ONI_CONTEXT, "Found no drivers matching '%s'", cpSearchString);
+		m_errorLogger.Append("Found no files matching '%s'", cpSearchString);
+		return XN_STATUS_NO_MODULES_FOUND;
 	}
+
+	acsFileList = XN_NEW_ARR(FileName, nFileCount);
+	nRetVal = xnOSGetFileList(cpSearchString, NULL, acsFileList, nFileCount, &nFileCount);
+#else
+	// Android
+	nFileCount = 3;
+	acsFileList = XN_NEW_ARR(FileName, nFileCount);
+	strcpy(acsFileList[0], "libPS1080.so");
+	strcpy(acsFileList[1], "libOniFile.so");
+	strcpy(acsFileList[2], "libPSLink.so");
+#endif
 
 	// Save directory
 	XnChar workingDir[XN_FILE_MAX_PATH];
 	xnOSGetCurrentDir(workingDir, XN_FILE_MAX_PATH);
 	// Change directory
-	xnOSSetCurrentDir(m_driverRepo);
+	xnOSSetCurrentDir(directoryName);
 
-	for (XnUInt32 i = 0; i < m_driversList.GetSize(); ++i)
+	for (int i = 0; i < nFileCount; ++i)
 	{
-		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Loading device driver '%s'...", m_driversList[i].getData());
-		DeviceDriver* pDeviceDriver = XN_NEW(DeviceDriver, m_driversList[i].getData(), m_frameManager, m_errorLogger);
+		DeviceDriver* pDeviceDriver = XN_NEW(DeviceDriver, acsFileList[i], m_frameManager, m_errorLogger);
 		if (pDeviceDriver == NULL || !pDeviceDriver->isValid())
 		{
-			xnLogWarning(XN_MASK_ONI_CONTEXT, "Couldn't use file '%s' as a device driver", m_driversList[i].getData());
-			m_errorLogger.Append("Couldn't understand file '%s' as a device driver", m_driversList[i].getData());
+			xnLogVerbose(XN_MASK_ONI_CONTEXT, "Couldn't use file '%s' as a device driver", acsFileList[i]);
+			m_errorLogger.Append("Couldn't understand file '%s' as a device driver", acsFileList[i]);
 			XN_DELETE(pDeviceDriver);
 			continue;
 		}
@@ -320,8 +254,8 @@ XnStatus Context::loadLibraries()
 		pDeviceDriver->registerDeviceStateChangedCallback(deviceDriver_DeviceStateChanged, this, dummy);
 		if (!pDeviceDriver->initialize())
 		{
-			xnLogVerbose(XN_MASK_ONI_CONTEXT, "Couldn't use file '%s' as a device driver", m_driversList[i].getData());
-			m_errorLogger.Append("Couldn't initialize device driver from file '%s'", m_driversList[i].getData());
+			xnLogVerbose(XN_MASK_ONI_CONTEXT, "Couldn't use file '%s' as a device driver", acsFileList[i]);
+			m_errorLogger.Append("Couldn't initialize device driver from file '%s'", acsFileList[i]);
 			XN_DELETE(pDeviceDriver);
 			continue;
 		}
@@ -336,19 +270,20 @@ XnStatus Context::loadLibraries()
 	if (m_deviceDrivers.Size() == 0)
 	{
 		xnLogError(XN_MASK_ONI_CONTEXT, "Found no valid drivers");
-		m_errorLogger.Append("Found no valid drivers");
+		m_errorLogger.Append("Found no valid drivers in '%s'", directoryName);
 		return XN_STATUS_NO_MODULES_FOUND;
 	}
 
+	XN_DELETE_ARR(acsFileList);
+
 	return XN_STATUS_OK;
 }
-
 void Context::shutdown()
 {
 	--m_initializationCounter;
 	if (m_initializationCounter > 0)
 	{
-		xnLogVerbose(XN_MASK_ONI_CONTEXT, "Shutdown: still need %d more shutdown calls (to match initializations)", m_initializationCounter);
+		xnLogInfo(XN_MASK_ONI_CONTEXT, "Shutdown: still need %d more shutdown calls (to match initializations)", m_initializationCounter);
 		return;
 	}
 	if (!s_valid)
@@ -392,12 +327,6 @@ void Context::shutdown()
 
 	m_cs.Unlock();
 
-	m_overrideDevice[0] = '\0';
-	m_driverRepo[0] = '\0';
-	m_pathToOpenNI[0] = '\0';
-	m_driversList.Clear();
-
-	xnLogVerbose(XN_MASK_ONI_CONTEXT, "Shutdown: successful.");
 	xnLogClose();
 }
 
@@ -614,13 +543,6 @@ OniStatus Context::createStream(OniDeviceHandle device, OniSensorType sensorType
 	m_streams.AddLast(pMyStream);
 	m_cs.Unlock();
 
-	if (m_autoRecording)
-	{
-		m_streamsToAutoRecord.Lock();
-		m_streamsToAutoRecord.AddLast(*pStream);
-		m_streamsToAutoRecord.Unlock();
-	}
-
 	return ONI_STATUS_OK;
 }
 
@@ -631,13 +553,6 @@ OniStatus Context::streamDestroy(OniStreamHandle stream)
 	if (stream == NULL)
 	{
 		return ONI_STATUS_OK;
-	}
-
-	if (m_autoRecording)
-	{
-		m_streamsToAutoRecord.Lock();
-		m_streamsToAutoRecord.Remove(stream);
-		m_streamsToAutoRecord.Unlock();
 	}
 
 	VideoStream* pStream = stream->pStream;

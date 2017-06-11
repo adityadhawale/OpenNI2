@@ -149,9 +149,9 @@ Samples/SimpleViewer.java:            Wrappers/java/OpenNI.java
 $(FINAL_DIR):
 	mkdir -p $(FINAL_DIR)
 
-#doc:
-#	Source/Documentation/Runme.py
-#	rm -f Source/Documentation/html/*.md5
+doc:
+	Source/Documentation/Runme.py
+	rm -f Source/Documentation/html/*.md5
 	
 release: | all doc $(FINAL_DIR)
 	Packaging/Harvest.py Packaging/$(PRODUCT_STRING) $(PLATFORM)

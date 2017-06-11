@@ -37,7 +37,7 @@ class Harvest:
         self.binDir = os.path.join(rootDir, 'Bin', arch + '-Release')
         self.platformSuffix = ''
         self.glutSuffix = '32'
-        
+
         if self.osName == 'Windows':
             if arch == 'x86':
                 self.binDir = os.path.join(rootDir, 'Bin', 'Win32-Release')
@@ -55,14 +55,14 @@ class Harvest:
             shutil.copy(os.path.join(sourceDir, 'lib' + name + '.dylib'), targetDir)
         else:
             raise 'Unsupported platform!'
-            
+
     def copyExecutable(self, sourceDir, name, targetDir):
         if self.osName == 'Windows':
             shutil.copy(os.path.join(sourceDir, name + '.exe'), targetDir)
             shutil.copy(os.path.join(sourceDir, name + '.pdb'), targetDir)
         else:
             shutil.copy(os.path.join(sourceDir, name), targetDir)
-            
+
     def regxReplace(self, findStr, repStr, filePath):
         "replaces all findStr by repStr in file filePath using regualr expression"
         findStrRegx = re.compile(findStr)
@@ -77,7 +77,7 @@ class Harvest:
         input.close()
         os.remove(filePath)
         os.rename(tempName, filePath)
-        
+
     def copyRedistFiles(self, targetDir):
         os.makedirs(targetDir)
         # start with OpenNI itself
@@ -96,11 +96,11 @@ class Harvest:
         shutil.copy(os.path.join(self.rootDir, 'Config', 'OpenNI2', 'Drivers', 'PSLink.ini'), targetDriversDir)
         if self.osName == 'Windows':
             self.copySharedObject(binDriversDir, 'Kinect', targetDriversDir)
-        
+
     def copySample(self, samplesDir, name, isLibrary = False, isGL = False, isJava = False):
         if self.arch == 'Arm' and isGL:
             return
-            
+
         sampleTargetDir = os.path.join(samplesDir, name)
         sampleSourceDir = os.path.join(self.rootDir, 'Samples', name)
 
@@ -114,11 +114,11 @@ class Harvest:
                     if not os.path.exists(dst):
                         os.makedirs(dst)
                     shutil.copy(os.path.join(root, file), dst)
-                    
+
         # copy common header
         if not isJava and not isLibrary:
             shutil.copy(os.path.join(self.rootDir, 'Samples', 'Common', 'OniSampleUtilities.h'), sampleTargetDir)
-            
+
         # copy GL headers
         if self.osName == 'Windows' and isGL:
             shutil.copytree(os.path.join(self.rootDir, 'ThirdParty', 'GL', 'GL'), os.path.join(sampleTargetDir, 'GL'))
@@ -128,7 +128,7 @@ class Harvest:
             shutil.copy(os.path.join(self.rootDir, 'ThirdParty', 'GL', 'glut64.lib'), sampleTargetDir)
             shutil.copy(os.path.join(self.rootDir, 'ThirdParty', 'GL', 'glut32.dll'), sampleTargetDir)
             shutil.copy(os.path.join(self.rootDir, 'ThirdParty', 'GL', 'glut64.dll'), sampleTargetDir)
-                    
+
         # and project file / makefile
         if self.osName == 'Windows':
             if isJava:
@@ -151,27 +151,27 @@ class Harvest:
                 buildFile.write(')\n')
                 buildFile.write(buildScript)
                 buildFile.close()
-                
+
             else:
                 shutil.copy(os.path.join(sampleSourceDir, name + '.vcxproj'), sampleTargetDir)
                 projFile = os.path.join(sampleTargetDir, name + '.vcxproj')
                 #ET.register_namespace('', 'http://schemas.microsoft.com/developer/msbuild/2003')
                 doc = xml.dom.minidom.parse(projFile)
-                
+
                 # remove OutDir and IntDir (make them default)
                 for propertyGroup in doc.getElementsByTagName("PropertyGroup"):
                     if len(propertyGroup.getElementsByTagName("OutDir")) > 0:
                         propertyGroup.parentNode.removeChild(propertyGroup)
-                
+
                 for group in doc.getElementsByTagName("ItemDefinitionGroup"):
                     condAttr = group.getAttribute('Condition')
                     if condAttr.find('x64') != -1:
                         postfix = '64'
                         glPostfix = '64'
-                    else: 
+                    else:
                         postfix = ''
                         glPostfix = '32'
-                        
+
                     incDirs = group.getElementsByTagName('ClCompile')[0].getElementsByTagName('AdditionalIncludeDirectories')[0]
                     val = incDirs.firstChild.data
 
@@ -181,7 +181,7 @@ class Harvest:
                     val = re.sub('..\\\\Common', r'.', val)
                     # fix OpenNI include dir
                     val = re.sub('..\\\\..\\\\Include', '$(OPENNI2_INCLUDE' + postfix + ')', val)
-                    
+
                     incDirs.firstChild.data = val
 
                     # fix additional library directories
@@ -189,22 +189,22 @@ class Harvest:
                     val = libDirs.firstChild.data
                     val = re.sub('\$\(OutDir\)', '$(OutDir);$(OPENNI2_LIB' + postfix + ')', val)
                     libDirs.firstChild.data = val
-                    
+
                     # add post-build event to copy OpenNI redist
                     post = doc.createElement('PostBuildEvent')
                     cmd = 'xcopy /D /S /F /Y "$(OPENNI2_REDIST' + postfix + ')\*" "$(OutDir)"\n'
                     if isGL:
                         cmd += 'xcopy /D /F /Y "$(ProjectDir)\\glut' + glPostfix + '.dll" "$(OutDir)"\n'
-                        
+
                     cmdNode = doc.createElement('Command')
                     cmdNode.appendChild(doc.createTextNode(cmd))
                     post.appendChild(cmdNode)
                     group.appendChild(post)
-                
+
                 proj = open(projFile, 'w')
                 proj.write(doc.toxml())
                 proj.close()
-                
+
         elif self.osName == 'Linux' or self.osName == 'Darwin':
             shutil.copy(os.path.join(sampleSourceDir, 'Makefile'), sampleTargetDir)
             shutil.copy(os.path.join(rootDir, 'ThirdParty', 'PSCommon', 'BuildSystem', 'CommonDefs.mak'), sampleTargetDir)
@@ -216,13 +216,13 @@ class Harvest:
                 shutil.copy(os.path.join(rootDir, 'ThirdParty', 'PSCommon', 'BuildSystem', 'CommonJavaMakefile'), sampleTargetDir)
             else:
                 shutil.copy(os.path.join(rootDir, 'ThirdParty', 'PSCommon', 'BuildSystem', 'CommonCppMakefile'), sampleTargetDir)
-                
+
             # fix common makefiles path
             self.regxReplace('../../ThirdParty/PSCommon/BuildSystem/', '', os.path.join(sampleTargetDir, 'Makefile'))
-            
+
             # fix BIN dir
             self.regxReplace('BIN_DIR = ../../Bin', 'BIN_DIR = Bin', os.path.join(sampleTargetDir, 'Makefile'))
-            
+
             # fix include dirs and copy openni_redist
             add = r'''
 ifndef OPENNI2_INCLUDE
@@ -238,9 +238,9 @@ include \1
 .PHONY: copy-redist
 copy-redist:
 	cp -R $(OPENNI2_REDIST)/* $(OUT_DIR)
-	
+
 $(OUTPUT_FILE): copy-redist
-'''            
+'''
             self.regxReplace(r'include (Common.*Makefile)', add, os.path.join(sampleTargetDir, 'Makefile'))
 
         # and executable
@@ -260,11 +260,11 @@ $(OUTPUT_FILE): copy-redist
                 shutil.copy(os.path.join(self.binDir, name + '.lib'), os.path.join(samplesDir, 'Bin'))
         else: # regular executable
             self.copyExecutable(self.binDir, name, os.path.join(samplesDir, 'Bin'))
-        
+
     def copyTool(self, toolsDir, name, isGL = False):
         if self.arch == 'Arm' and isGL:
             return
-            
+
         self.copyExecutable(self.binDir, name, toolsDir)
 
     def copyDocumentation(self, docDir):
@@ -273,58 +273,58 @@ $(OUTPUT_FILE): copy-redist
             shutil.copy(os.path.join(self.rootDir, 'Source', 'Documentation', 'html', 'OpenNI.chm'), docDir)
         else:
             shutil.copytree(os.path.join(self.rootDir, 'Source', 'Documentation', 'html'), docDir)
-            
+
         shutil.copytree(os.path.join(self.rootDir, 'Source', 'Documentation', 'java'), os.path.join(docDir, 'java'))
-            
+
     def copyGLUT(self, targetDir):
         if self.osName == 'Windows':
             shutil.copy(os.path.join(rootDir, 'ThirdParty', 'GL', 'glut' + self.glutSuffix + '.dll'), targetDir)
-        
+
     def run(self):
         if os.path.exists(self.outDir):
             shutil.rmtree(self.outDir)
         os.makedirs(self.outDir)
-        
+
         # Redist
         self.copyRedistFiles(os.path.join(self.outDir, 'Redist'))
-        
+
         # Samples
         samplesDir = os.path.join(self.outDir, 'Samples')
         self.copyRedistFiles(os.path.join(samplesDir, 'Bin'))
         self.copyGLUT(os.path.join(samplesDir, 'Bin'))
         self.copySample(samplesDir, 'SimpleRead')
-        self.copySample(samplesDir, 'SimpleViewer', isGL = True)
+#        self.copySample(samplesDir, 'SimpleViewer', isGL = True)
         self.copySample(samplesDir, 'SimpleViewer.java', isJava = True)
         self.copySample(samplesDir, 'EventBasedRead')
-        self.copySample(samplesDir, 'MultiDepthViewer', isGL = True)
+#        self.copySample(samplesDir, 'MultiDepthViewer', isGL = True)
         self.copySample(samplesDir, 'MultipleStreamRead')
         self.copySample(samplesDir, 'MWClosestPoint', isLibrary = True)
         self.copySample(samplesDir, 'MWClosestPointApp')
-        self.copySample(samplesDir, 'ClosestPointViewer', isGL = True)
-        
+#        self.copySample(samplesDir, 'ClosestPointViewer', isGL = True)
+
         # Tools
         toolsDir = os.path.join(self.outDir, 'Tools')
         self.copyRedistFiles(toolsDir)
         self.copyGLUT(toolsDir)
-        self.copyTool(toolsDir, 'NiViewer', isGL = True)
+#        self.copyTool(toolsDir, 'NiViewer', isGL = True)
         self.copyTool(toolsDir, 'PS1080Console')
         self.copyTool(toolsDir, 'PSLinkConsole')
-        
+
         # Documentation
         docDir = os.path.join(self.outDir, 'Documentation')
         self.copyDocumentation(docDir)
-        
+
         # Include
         shutil.copytree(os.path.join(rootDir, 'Include'), os.path.join(self.outDir, 'Include'))
-        
+
         # Licenses
         shutil.copy(os.path.join(rootDir, 'NOTICE'), self.outDir)
         shutil.copy(os.path.join(rootDir, 'LICENSE'), self.outDir)
-        
+
         if self.osName == 'Windows':
             # Driver
             shutil.copytree(os.path.join(rootDir, 'ThirdParty', 'PSCommon', 'XnLib', 'Driver', 'Win32', 'Bin'), os.path.join(self.outDir, 'Driver'))
-            
+
             # Library
             libDir = os.path.join(self.outDir, 'Lib')
             os.makedirs(libDir)
@@ -337,7 +337,7 @@ $(OUTPUT_FILE): copy-redist
 if len(sys.argv) < 3:
     print 'Usage: ' + sys.argv[0] + ' <OutDir> <x86|x64|Arm>'
     exit(1)
-    
+
 rootDir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
 harvest = Harvest(rootDir, sys.argv[1], sys.argv[2])
 harvest.run()

@@ -312,7 +312,7 @@ $(OUTPUT_FILE): copy-redist
 
         # Documentation
         docDir = os.path.join(self.outDir, 'Documentation')
-        self.copyDocumentation(docDir)
+#        self.copyDocumentation(docDir)
 
         # Include
         shutil.copytree(os.path.join(rootDir, 'Include'), os.path.join(self.outDir, 'Include'))

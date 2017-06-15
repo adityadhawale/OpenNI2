@@ -311,7 +311,7 @@ $(OUTPUT_FILE): copy-redist
         self.copyTool(toolsDir, 'PSLinkConsole')
 
         # Documentation
-        docDir = os.path.join(self.outDir, 'Documentation')
+#        docDir = os.path.join(self.outDir, 'Documentation')
 #        self.copyDocumentation(docDir)
 
         # Include

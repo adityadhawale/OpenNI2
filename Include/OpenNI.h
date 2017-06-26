@@ -27,6 +27,7 @@
 
 #include "OniCAPI.h"
 #include "OniCProperties.h"
+#include <iostream>
 
 /**
 openni is the namespace of the entire C++ API of OpenNI
@@ -1871,6 +1872,7 @@ public:
 	}
 	Status setExposure(int exposure)
 	{
+		std::cout << "exposure:	" << exposure << std::endl;
 		exposure = 255;
 		return setProperty(STREAM_PROPERTY_EXPOSURE, exposure);
 	}

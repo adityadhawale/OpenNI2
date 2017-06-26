@@ -1872,6 +1872,7 @@ public:
 	Status setExposure(int exposure)
 	{
 		exposure = (int) 300000;
+		std::cout<< "SETTING NEW EXPOSURE VALUE\n";
 		return setProperty(STREAM_PROPERTY_EXPOSURE, exposure);
 	}
 	int getGain()

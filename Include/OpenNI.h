@@ -20,7 +20,7 @@
 *****************************************************************************/
 #ifndef _OPENNI_H_
 #define _OPENNI_H_
-#include <iostream>
+
 #include "OniPlatform.h"
 #include "OniProperties.h"
 #include "OniEnums.h"
@@ -1871,8 +1871,6 @@ public:
 	}
 	Status setExposure(int exposure)
 	{
-		// exposure = (int) 300000;
-		std::cout<< "SETTING NEW EXPOSURE VALUE\n";
 		return setProperty(STREAM_PROPERTY_EXPOSURE, exposure);
 	}
 	int getGain()

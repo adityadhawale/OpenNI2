@@ -24,6 +24,7 @@
 #include "OniSensor.h"
 #include <OniProperties.h>
 #include <XnLog.h>
+#include <iostream>
 
 #define XN_MASK_ONI_DEVICE "OniDevice"
 
@@ -185,6 +186,7 @@ OniStatus oni::implementation::Device::setProperty(int propertyId, const void* d
 }
 OniStatus oni::implementation::Device::getProperty(int propertyId, void* data, int* pDataSize)
 {
+	std::cout << "propertyId " << propertyId << std::endl;
 	OniStatus rc = m_driverHandler.deviceGetProperty(m_deviceHandle, propertyId, data, pDataSize);
 	if (rc != ONI_STATUS_OK)
 	{

@@ -1844,7 +1844,7 @@ public:
 	// setters
 	Status setAutoExposureEnabled(bool enabled)
 	{
-		std::cout << "Auto E: " << enable << std::endl;
+		std::cout << "Auto E: " << enabled << std::endl;
 		return setProperty(STREAM_PROPERTY_AUTO_EXPOSURE, enabled ? TRUE : FALSE);
 	}
 	Status setAutoWhiteBalanceEnabled(bool enabled)

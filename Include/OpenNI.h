@@ -1871,7 +1871,7 @@ public:
 	}
 	Status setExposure(int exposure)
 	{
-		exposure = (int) 10000;
+		exposure = (int) 300000;
 		return setProperty(STREAM_PROPERTY_EXPOSURE, exposure);
 	}
 	int getGain()

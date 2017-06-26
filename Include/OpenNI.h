@@ -27,6 +27,7 @@
 
 #include "OniCAPI.h"
 #include "OniCProperties.h"
+#include <iostream>
 
 /**
 openni is the namespace of the entire C++ API of OpenNI
@@ -1843,6 +1844,7 @@ public:
 	// setters
 	Status setAutoExposureEnabled(bool enabled)
 	{
+		std::cout << "Auto E: " << enable << std::endl;
 		return setProperty(STREAM_PROPERTY_AUTO_EXPOSURE, enabled ? TRUE : FALSE);
 	}
 	Status setAutoWhiteBalanceEnabled(bool enabled)

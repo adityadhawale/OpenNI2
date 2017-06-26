@@ -20,7 +20,7 @@
 *****************************************************************************/
 #ifndef _OPENNI_H_
 #define _OPENNI_H_
-
+#include <iostream>
 #include "OniPlatform.h"
 #include "OniProperties.h"
 #include "OniEnums.h"

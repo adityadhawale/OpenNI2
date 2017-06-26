@@ -1848,6 +1848,7 @@ public:
 	}
 	Status setAutoWhiteBalanceEnabled(bool enabled)
 	{
+		std::cout << "wite:	" << enabled << std::endl;
 		return setProperty(STREAM_PROPERTY_AUTO_WHITE_BALANCE, enabled ? TRUE : FALSE);
 	}
 
@@ -1868,6 +1869,7 @@ public:
 
 	Status setGain(int gain)
 	{
+		std::cout << "exposurega:	" << gain << std::endl;
 		return setProperty(STREAM_PROPERTY_GAIN, gain);
 	}
 	Status setExposure(int exposure)

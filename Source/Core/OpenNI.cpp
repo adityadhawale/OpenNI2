@@ -23,6 +23,7 @@
 #include "OniProperties.h"
 #include "OniInternal.h"
 #include <XnLog.h>
+#include <iostream>
 
 oni::implementation::Context g_Context;
 

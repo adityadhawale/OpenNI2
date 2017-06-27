@@ -26,6 +26,7 @@
 #include <XnOS.h>
 #include <XnCallback.h>
 #include <XnLog.h>
+#include <iostream>
 
 //---------------------------------------------------------------------------
 // Code

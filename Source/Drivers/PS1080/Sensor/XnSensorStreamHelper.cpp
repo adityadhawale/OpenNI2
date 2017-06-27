@@ -229,7 +229,6 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 			// before actual changing it, check if this is a processor property
 			if (pPropData->bProcessorProp)
 			{
-				std::cout << "before d \n";
 				// lock processor
 				nRetVal = GetFirmware()->GetStreams()->LockStreamProcessor(m_pStream->GetType(), m_pStream);
 				XN_IS_STATUS_OK(nRetVal);
@@ -242,12 +241,14 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 
 			if (pPropData->pStreamToFirmwareFunc != NULL)
 			{
+				std::cout << "Not null\n";
 				nRetVal = pPropData->pStreamToFirmwareFunc(nValue, &nFirmwareValue);
 				XN_IS_STATUS_OK(nRetVal);
 			}
 
 			// set the param in firmware
 			nRetVal = pPropData->pFirmwareProp->SetValue(nFirmwareValue);
+			std::cout << "Ret val" << nRetVal << std::endl;
 			XN_IS_STATUS_OK(nRetVal);
 
 			// no need to do anything after property will be set

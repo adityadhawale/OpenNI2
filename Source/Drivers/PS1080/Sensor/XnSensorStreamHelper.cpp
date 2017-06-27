@@ -234,6 +234,7 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 			}
 
 			// OK. change the value
+			std::cout << "Changing firmware value\n";
 			XnUInt64 nFirmwareValue = nValue;
 
 			if (pPropData->pStreamToFirmwareFunc != NULL)
@@ -251,6 +252,7 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 		}
 		else
 		{
+			std::cout << " Cant Change firmware value\n";
 			// we can't change the firmware param. We should first close the stream
 			nRetVal = m_pStream->Close();
 			XN_IS_STATUS_OK(nRetVal);
@@ -300,6 +302,7 @@ XnStatus XnSensorStreamHelper::SimpleSetFirmwareParam(XnActualIntProperty& Prope
 	nRetVal = BeforeSettingFirmwareParam(Property, nValue);
 	XN_IS_STATUS_OK(nRetVal);
 	std::cout << "Firmware PARAM:	" << nValue << std::endl;
+	std::cout << "Firmware PARAM:	" << nRetVal << std::endl;
 	nRetVal = Property.UnsafeUpdateValue(nValue);
 	XN_IS_STATUS_OK(nRetVal);
 

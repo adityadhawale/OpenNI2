@@ -86,6 +86,8 @@ XnStatus XnProperty::SetValue(const void* pValue)
 	{
 		XnStatus nRetVal = CallSetCallback(m_pSetCallback, pValue, m_pSetCallbackCookie);
 		std::cout << "Cookie " << m_pSetCallbackCookie << std::endl;
+		std::cout << "Pval " << pValue << std::endl;
+		std::cout << "Callback " << m_pSetCallback << std::endl;
 		if (nRetVal != XN_STATUS_OK)
 		{
 			std::cout << "set g\n";

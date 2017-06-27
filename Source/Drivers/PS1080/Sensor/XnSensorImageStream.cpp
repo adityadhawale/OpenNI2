@@ -933,6 +933,7 @@ XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAutoWhiteBalanceCallback(XnAct
 XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback(XnActualIntProperty*, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pStream = (XnSensorImageStream*)pCookie;
+	std::cout << nValue << std::endl;
 	return pStream->SetExposure(nValue);
 }
 

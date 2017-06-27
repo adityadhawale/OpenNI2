@@ -24,7 +24,7 @@
 #include "XnSensorStreamHelper.h"
 #include "XnStreamProcessor.h"
 #include <XnLog.h>
-
+#include <iostream>
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------

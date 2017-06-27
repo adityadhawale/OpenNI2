@@ -67,16 +67,13 @@ XnStatus XnProperty::SetValue(const void* pValue)
 
 	if (m_LogSeverity != -1)
 	{
-		std::cout << "set b\n";
 		XnChar strValue[XN_DEVICE_MAX_STRING_LENGTH];
 		if (ConvertValueToString(strValue, pValue))
 		{
-			std::cout << "set c\n";
 			xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "Setting %s.%s to %s...", GetModule(), GetName(), strValue);
 		}
 		else
 		{
-			std::cout << "set d\n";
 			xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "Setting %s.%s...", GetModule(), GetName());
 		}
 	}
@@ -95,7 +92,6 @@ XnStatus XnProperty::SetValue(const void* pValue)
 			std::cout << "set g\n";
 			if (m_LogSeverity != -1)
 			{
-				std::cout << "set h\n";
 				xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "Failed setting %s.%s: %s", GetModule(), GetName(), xnGetStatusString(nRetVal));
 			}
 			return (nRetVal);

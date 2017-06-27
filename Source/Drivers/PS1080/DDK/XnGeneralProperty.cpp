@@ -24,6 +24,7 @@
 #include "XnGeneralProperty.h"
 #include <XnLog.h>
 #include <XnCore.h>
+#include <iostream>
 
 //---------------------------------------------------------------------------
 // Code
@@ -53,6 +54,7 @@ XnBool XnGeneralProperty::IsEqual(const void* pValue1, const void* pValue2) cons
 
 XnStatus XnGeneralProperty::CallSetCallback(XnProperty::SetFuncPtr pFunc, const void* pValue, void* pCookie)
 {
+	std::cout << "General Callback \n";
 	SetFuncPtr pCallback = (SetFuncPtr)pFunc;
 	return pCallback(this, *(const OniGeneralBuffer*)pValue, pCookie);
 }

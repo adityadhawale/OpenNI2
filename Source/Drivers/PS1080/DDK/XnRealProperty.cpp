@@ -23,7 +23,7 @@
 //---------------------------------------------------------------------------
 #include "XnRealProperty.h"
 #include <XnLog.h>
-
+#include <iostream>
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
@@ -62,6 +62,7 @@ XnBool XnRealProperty::IsEqual(const void* pValue1, const void* pValue2) const
 
 XnStatus XnRealProperty::CallSetCallback(XnProperty::SetFuncPtr pFunc, const void* pValue, void* pCookie)
 {
+	std::cout << "Real Property \n";
 	SetFuncPtr pCallback = (SetFuncPtr)pFunc;
 	return pCallback(this, *(const XnDouble*)pValue, pCookie);
 }

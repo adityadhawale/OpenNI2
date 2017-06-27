@@ -66,7 +66,7 @@ XnStatus XnIntProperty::CallSetCallback(XnProperty::SetFuncPtr pFunc, const void
 {
 	std::cout<< "IntProperty \n";
 	SetFuncPtr pCallback = (SetFuncPtr)pFunc;
-	pCallback(this, 0, pCookie);
+	// pCallback(this, 0, pCookie);
 	return pCallback(this, *(const XnUInt64*)pValue, pCookie);
 }
 

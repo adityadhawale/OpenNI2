@@ -730,9 +730,10 @@ XnStatus XnSensorImageStream::SetAutoWhiteBalance(XnBool bAutoWhiteBalance)
 XnStatus XnSensorImageStream::SetExposure(XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-
+	std::cout <<"NVAL:	" << nValue << std::endl;
 	if (!m_Helper.GetPrivateData()->FWInfo.bImageAdjustmentsSupported)
 	{
+		std::cout <<"NVAL Inside:	" << nValue << std::endl;
 		return (XN_STATUS_UNSUPPORTED_VERSION);
 	}
 
@@ -921,6 +922,7 @@ XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetCroppingModeCallback(XnActualI
 
 XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAutoExposureCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
+	std::cout << "Auto Exposing \n";
 	XnSensorImageStream* pStream = (XnSensorImageStream*)pCookie;
 	return pStream->SetAutoExposure((XnBool)nValue);
 }
@@ -934,7 +936,6 @@ XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAutoWhiteBalanceCallback(XnAct
 XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback(XnActualIntProperty*, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pStream = (XnSensorImageStream*)pCookie;
-	std::cout << nValue << std::endl;
 	return pStream->SetExposure(nValue);
 }
 

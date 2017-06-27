@@ -217,16 +217,19 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 
 	pPropData->CurrentTransaction.bShouldOpen = FALSE;
 	pPropData->CurrentTransaction.bChooseProcessor = FALSE;
-
+	std::cout << "before a \n";
 	// if stream is closed, we can just update the prop.
 	if (m_pStream->IsOpen())
 	{
+		std::cout << "before b \n";
 		// check if we need to close the stream first
 		if (pPropData->bAllowWhileOpen)
 		{
+			std::cout << "before c \n";
 			// before actual changing it, check if this is a processor property
 			if (pPropData->bProcessorProp)
 			{
+				std::cout << "before d \n";
 				// lock processor
 				nRetVal = GetFirmware()->GetStreams()->LockStreamProcessor(m_pStream->GetType(), m_pStream);
 				XN_IS_STATUS_OK(nRetVal);

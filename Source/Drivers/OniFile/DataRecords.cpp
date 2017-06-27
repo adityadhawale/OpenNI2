@@ -664,16 +664,16 @@ XnStatus GeneralPropRecord::Decode()
 	XN_IS_STATUS_OK(nRetVal);
 
 	//The property data is not copied but just pointed to
-	XnUInt32* pData = const_cast<XnUInt32*>(GetReadPos());
+	XnUInt8* pData = const_cast<XnUInt8*>(GetReadPos());
 
 #if (XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_ARC || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
 	// under ARM we have some alignment issues. Move this buffer so it will be aligned.
-	XnUInt32 nAlignFix = XN_DEFAULT_MEM_ALIGN - ((XnUInt32)pData % XN_DEFAULT_MEM_ALIGN);
-	if (nAlignFix != 0)
-	{
-		xnOSMemMove(pData + nAlignFix, pData, m_nPropDataSize);
-		pData += nAlignFix;
-	}
+	// XnUInt32 nAlignFix = XN_DEFAULT_MEM_ALIGN - ((XnUInt32)pData % XN_DEFAULT_MEM_ALIGN);
+	// if (nAlignFix != 0)
+	// {
+	// 	xnOSMemMove(pData + nAlignFix, pData, m_nPropDataSize);
+	// 	pData += nAlignFix;
+	// }
 #endif
 
 	m_pPropData = pData;

@@ -731,6 +731,7 @@ XnStatus XnSensorImageStream::SetExposure(XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	std::cout <<"NVAL:	" << nValue << std::endl;
+	std::cout << "ADJUSTMENT SUPPORTED:	" <<m_Helper.GetPrivateData()->FWInfo.bImageAdjustmentsSupported << std::endl;
 	if (!m_Helper.GetPrivateData()->FWInfo.bImageAdjustmentsSupported)
 	{
 		std::cout <<"NVAL Inside:	" << nValue << std::endl;

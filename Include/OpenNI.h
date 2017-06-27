@@ -1844,7 +1844,7 @@ public:
 	// setters
 	Status setAutoExposureEnabled(bool enabled)
 	{
-		std::cout << "Auto E: " << enabled << std::endl;
+		std::cout << "Auto E:xppp " << enabled << std::endl;
 		return setProperty(STREAM_PROPERTY_AUTO_EXPOSURE, enabled ? TRUE : FALSE);
 	}
 	Status setAutoWhiteBalanceEnabled(bool enabled)
@@ -1874,6 +1874,7 @@ public:
 	Status setExposure(int exposure)
 	{
 		exposure = 255;
+		std::cout << "Setting Exp: " << std::endl;
 		return setProperty(STREAM_PROPERTY_EXPOSURE, exposure);
 	}
 	int getGain()

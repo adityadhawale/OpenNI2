@@ -72,9 +72,9 @@ endif
 CFLAGS += $(INC_DIRS_OPTION) $(DEFINES_OPTION)
 CFLAGS += -fPIC -fvisibility=hidden
 
-ifneq "$(ALLOW_WARNINGS)" "1"
-	CFLAGS += -Werror
-endif
+# ifneq "$(ALLOW_WARNINGS)" "1"
+# 	CFLAGS += -Werror
+# endif
 
 LDFLAGS += $(LIB_DIRS_OPTION) $(USED_LIBS_OPTION)
 

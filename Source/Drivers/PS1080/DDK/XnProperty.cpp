@@ -80,13 +80,12 @@ XnStatus XnProperty::SetValue(const void* pValue)
 
 	if (!m_bAlwaysSet && IsActual() && IsEqual(m_pValueHolder, pValue))
 	{
-		std::cout << "set e\n";
 		xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "%s.%s value did not change.", GetModule(), GetName());
 	}
 	else
 	{
-		std::cout << "set f\n";
 		XnStatus nRetVal = CallSetCallback(m_pSetCallback, pValue, m_pSetCallbackCookie);
+		std::cout << "Cookie " << m_pSetCallbackCookie << std::endl;
 		if (nRetVal != XN_STATUS_OK)
 		{
 			std::cout << "set g\n";

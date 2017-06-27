@@ -299,7 +299,7 @@ XnStatus XnSensorStreamHelper::SimpleSetFirmwareParam(XnActualIntProperty& Prope
 	
 	nRetVal = BeforeSettingFirmwareParam(Property, nValue);
 	XN_IS_STATUS_OK(nRetVal);
-
+	std::cout << "Firmware PARAM:	" << nValue << std::endl;
 	nRetVal = Property.UnsafeUpdateValue(nValue);
 	XN_IS_STATUS_OK(nRetVal);
 
